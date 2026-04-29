@@ -30,7 +30,7 @@ export const getUserById = async (req, res) => {
     try {
         const userId = req.params.id
         const requestingUser = req.user.userId 
-        if (requestingUser !== userId) {
+        if (requestingUser.toString()!== userId.toString()) {
             return res.status(403).json({ success: false, message: "Unauthorized access" })
         }
         const user = await User.findById(userId)
