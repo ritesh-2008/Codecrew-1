@@ -8,4 +8,4 @@ router.get("/getprojects", authMiddleware, getProjects);
 router.get("/projects/:id", authMiddleware, getProjectById);
 router.post("/projects/:id/join", authMiddleware, joinProject);
 
-export default router;
+export default router; 

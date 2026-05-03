@@ -62,13 +62,13 @@ export const getProjectById = async (req, res) => {
 
 export const joinProject = async (req, res) => {
 const projectId = req.params.id
-const userId = req.body.userId
+const userId = req.user.userId
 
 try {
     const project = await Project.findByIdAndUpdate(
         projectId,
         { $addToSet: { members: userId } },
-        { new: true }
+        { returnDocument: "after"}
     )
     if (project) {
         res.json({ success: true, message: "Joined project successfully" })

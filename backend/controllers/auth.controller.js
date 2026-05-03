@@ -15,12 +15,12 @@ export const register = async (req, res) => {
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10)
-        console.log(`[Register] Hashed password for ${email}:`, hashedPassword)
+      
 
         const adduser = new User({ username, password: hashedPassword, email, skills, location })
         await adduser.save()
 
-        console.log(`[Register] User registered successfully: ${email}`)
+        
         res.json({ success: true, message: "User registered successfully" })
     } catch (error) {
         console.error("[Register] Error registering user:", error.message)
@@ -36,7 +36,7 @@ export const login = async (req, res) => {
     }
 
     try {
-        console.log(`[Login] Attempt for email: ${email}`)
+        
 
         // Debug: Check if JWT_SECRET is set
         if (!process.env.JWT_SECRET) {
@@ -50,10 +50,10 @@ export const login = async (req, res) => {
             return res.status(401).json({ success: false, message: "Invalid email or password" })
         }
 
-        console.log(`[Login] User found: ${email}, stored password hash:`, user.password.substring(0, 20) + "...")
+        
 
         const isValid = await bcrypt.compare(password, user.password)
-        console.log(`[Login] Password match result: ${isValid}`)
+        
 
         if (isValid) {
             const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION || "1d" })
