@@ -24,30 +24,32 @@ export const AuthProvider = ({ children }) => {
     }, [])
 
 
-    const register = useCallback(async (username, email, password) => {
+    const register = useCallback(async (username, email, password, skills, location) => {
         setError(null);
         try {
-            const response = api.post("auth/register", {
+            const response = api.post("/auth/register", {
                 username,
                 email,
-                password
+                password,
+                skills,
+                location
             })
 
             if (response.data.success) {
-                const loginres = api.post("auth/login", {
+                const loginres = await api.post("/auth/login", {
                     email,
-                    password
+                    password,
                 });
 
                 if (loginres.data.success) {
                     const newtoken = loginres.data.token;
-                    const decode = jwtDecode(newtoken)
+                    const decoded = jwtDecode(newtoken)
 
                     localStorage.setItem("token", newtoken)
-                    localStorage.setItem("uset", JSON.stringify({
+                    localStorage.setItem("user", JSON.stringify({
                         name: username,
                         email,
-                        userId: decode.userId
+                        userId: decoded.userId
 
                     }))
                     settoken(newtoken)
@@ -66,7 +68,7 @@ export const AuthProvider = ({ children }) => {
     const login = useCallback(async (email, password) => {
         setError(null);
         try {
-            const response = api.post("auth/login", { email, password })
+            const response = await api.post("/auth/login", { email, password })
 
             if (response.data.success && response.data.token) {
                 const newtoken = response.data.token
@@ -80,6 +82,8 @@ export const AuthProvider = ({ children }) => {
                     userId: decoded.userId,
 
                 }))
+                settoken(newtoken)
+                setuser({ name: "User", email, userId: decoded.userId })
                 return { success: true }
             } else {
                 throw new Error(response.data.message || "invalid reponse from server")
@@ -111,6 +115,6 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!token,
         api
     };
-    
+
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
