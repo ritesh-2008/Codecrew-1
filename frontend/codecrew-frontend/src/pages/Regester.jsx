@@ -40,7 +40,7 @@ export default function Register() {
 
         const res = await register(username, email, password, skills, location)
         if (res.success) {
-            navigate("/home")
+            navigate("/feed")
         } else {
             seterror(res.error || "Registration failed")
         }
@@ -52,7 +52,7 @@ export default function Register() {
             <div className="w-full max-w-sm sm:max-w-lg lg:max-w-2xl space-y-6 sm:space-y-8 lg:space-y-12">
                 {/* Header Section */}
                 <div className="text-center space-y-4">
-                    <div className="inline-block bg-linear-to-r#002b33<<< to-pink-600 bg-clip-text text-transparent">
+                    <div className="inline-block bg-linear-to-r#002b33<<<<< to-pink-600 bg-clip-text text-transparent">
                         <h1 className="text-4xl sm:text-6xl lg:text-8xl font-black leading-tight">CodeCrew</h1>
                     </div>
                     <div className="space-y-3">
