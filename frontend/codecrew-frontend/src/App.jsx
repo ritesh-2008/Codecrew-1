@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Regester";
 import Landing from "./pages/Landing";
 import Feed from "./pages/Feed";
+import CreateProject from "./components/Createproject";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
             <Route path="/login" element={<Login/>}/>
             <Route path="/register" element={<Register/>}/>
             <Route path="/feed" element={<ProtectedRoute> <Feed /> </ProtectedRoute>}/>
+            <Route path="/createproject" element={<ProtectedRoute> <CreateProject /> </ProtectedRoute>}/>
           </Routes>
         </Router>
       </AuthProvider>

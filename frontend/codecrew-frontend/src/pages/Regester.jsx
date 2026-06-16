@@ -6,7 +6,7 @@ export default function Register() {
     const [username, setusername] = useState("");
     const [password, setpassword] = useState("");
     const [email, setemail] = useState("");
-    const [skills, setskills] = useState("");
+    const [skills, setskills] = useState([]);
     const [location, setlocation] = useState("");
     const [loading, setloading] = useState(false);
     const [error, seterror] = useState("");
