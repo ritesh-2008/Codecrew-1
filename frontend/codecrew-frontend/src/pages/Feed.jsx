@@ -1,175 +1,542 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 
 export default function Feed() {
-  const [projects, setprojects] = useState([]);
-  const [loading, setloading] = useState(true);
-  const [user, setuser] = useState("");
-  const [error, seterror] = useState("");
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [activeSkill, setActiveSkill] = useState("All");
+  const [joiningId, setJoiningId] = useState("");
+  const [joinedIds, setJoinedIds] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fecthproject = async () => {
+    const fetchProjects = async () => {
       try {
         const res = await api.get("/getprojects");
-        console.log(res.data)
-        setprojects(res.data.projects);
+        setProjects(res.data.projects || []);
       } catch (err) {
-        console.error(err)
-        seterror("Failed to load projects");
+        console.error(err);
+        setError("Failed to load projects");
       } finally {
-        setloading(false)
+        setLoading(false);
       }
     };
-    fecthproject();
-  }, [])
 
+    fetchProjects();
+  }, []);
 
+  const skillCloud = useMemo(() => {
+    const skills = projects.flatMap((project) =>
+      Array.isArray(project.skills) ? project.skills : []
+    );
 
-  const getusername = async (creator) => {
+    return ["All", ...Array.from(new Set(skills.filter(Boolean))).slice(0, 8)];
+  }, [projects]);
+
+  const filteredProjects = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return projects.filter((project) => {
+      const skills = Array.isArray(project.skills) ? project.skills : [];
+      const matchesSkill = activeSkill === "All" || skills.includes(activeSkill);
+      const searchable = [
+        project.title,
+        project.description,
+        project.location,
+        ...skills,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return matchesSkill && (!normalizedQuery || searchable.includes(normalizedQuery));
+    });
+  }, [activeSkill, projects, query]);
+
+  const handleJoin = async (projectId) => {
+    setJoiningId(projectId);
     try {
-      const res = await api.get(`/users/${creator}`);
-      setuser(res.username)
-    } catch (err) {
-      seterror(err)
-    }
-  }
-  const handlejoin = async (projectId) => {
-    try {
-      const res = await api.post(`/projects/${projectId}/join`)
+      const res = await api.post(`/projects/${projectId}/join`);
       if (res.data.success) {
-        alert("Joined successfully! 🎉")
+        setJoinedIds((current) =>
+          current.includes(projectId) ? current : [...current, projectId]
+        );
       }
     } catch (err) {
-      console.error(err)
-      alert("Failed to join project");
+      console.error(err);
+      setError("Failed to join project");
+    } finally {
+      setJoiningId("");
     }
   };
 
+  const totalSkills = skillCloud.length > 1 ? skillCloud.length - 1 : 0;
+
   return (
-    <main className="bg-linear-to-br from-gray-50 via-gray-100 to-gray-50 min-h-screen py-6 sm:py-8 lg:py-10 px-2 sm:px-4 lg:px-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
-        <div className="mb-8 sm:mb-10 lg:mb-12">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-            <div className="text-center flex-1">
-              <div className="inline-block bg-linear-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent mb-4">
-                <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black leading-tight">
-                  Discover Projects
-                </h1>
-              </div>
-            </div>
-            <button
-              onClick={() => navigate("/createproject")}
-              className="px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 text-sm sm:text-base lg:text-lg font-bold text-white bg-linear-to-r from-rose-600 to-pink-600 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:from-rose-700 hover:to-pink-700 active:scale-95 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 focus:ring-offset-white transform whitespace-nowrap"
-            >
-              <span className="flex items-center justify-center gap-2">
-                <span>Create Project</span>
-                <span className="text-base sm:text-lg">➕</span>
-              </span>
-            </button>
+    <main style={{
+      minHeight: "100vh",
+      background: "#080510",
+      color: "white",
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      padding: "clamp(22px, 4vw, 40px)",
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Syne:wght@700;800&display=swap');
+
+        * { box-sizing: border-box; }
+        body { overflow-x: hidden; }
+
+        @keyframes feedFloatA { 0%,100%{transform:translate3d(0,0,0)} 50%{transform:translate3d(0,-22px,0)} }
+        @keyframes feedFloatB { 0%,100%{transform:translate3d(0,0,0)} 50%{transform:translate3d(0,20px,0)} }
+        @keyframes feedFadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes feedShimmer { 0%{background-position:-300% center} 100%{background-position:300% center} }
+        @keyframes feedSpin { to{transform:rotate(360deg)} }
+
+        .feed-shell {
+          width: min(1180px, 100%);
+          margin: 0 auto;
+          position: relative;
+          z-index: 1;
+          animation: feedFadeUp 0.55s ease-out both;
+        }
+        .feed-nav {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: clamp(28px, 5vw, 48px);
+        }
+        .feed-brand {
+          display: inline-flex;
+          align-items: center;
+          gap: 9px;
+          padding: 7px 14px;
+          border-radius: 999px;
+          background: rgba(244,63,94,0.09);
+          border: 1px solid rgba(244,63,94,0.22);
+          color: rgba(244,63,94,0.9);
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 1.3px;
+          text-transform: uppercase;
+        }
+        .feed-title {
+          font-family: 'Syne', sans-serif;
+          font-size: clamp(44px, 8vw, 86px);
+          font-weight: 800;
+          letter-spacing: -2px;
+          line-height: 0.95;
+          margin: 0;
+          max-width: 760px;
+        }
+        .feed-title span {
+          background: linear-gradient(135deg, #fff, rgba(255,255,255,0.7), rgba(244,63,94,0.92));
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+        .feed-create {
+          border: 0;
+          border-radius: 13px;
+          padding: 13px 18px;
+          background: linear-gradient(135deg, #f43f5e, #e11d48);
+          color: white;
+          font: inherit;
+          font-weight: 800;
+          cursor: pointer;
+          box-shadow: 0 0 34px rgba(244,63,94,0.28);
+          transition: transform 0.18s, box-shadow 0.18s;
+          white-space: nowrap;
+        }
+        .feed-create:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 0 54px rgba(244,63,94,0.4);
+        }
+        .feed-create:active { transform: scale(0.98); }
+        .feed-dashboard {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 320px;
+          gap: 18px;
+          align-items: stretch;
+          margin: clamp(24px, 4vw, 36px) 0 22px;
+        }
+        .feed-control,
+        .feed-stat,
+        .project-card,
+        .feed-state {
+          background: rgba(255,255,255,0.045);
+          border: 1px solid rgba(255,255,255,0.09);
+          backdrop-filter: blur(22px);
+          box-shadow: 0 20px 60px rgba(0,0,0,0.22);
+        }
+        .feed-control {
+          border-radius: 18px;
+          padding: 16px;
+        }
+        .feed-search {
+          width: 100%;
+          height: 52px;
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 13px;
+          background: rgba(8,5,18,0.72);
+          color: white;
+          font: inherit;
+          font-size: 16px;
+          padding: 0 16px;
+          outline: none;
+          transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+        }
+        .feed-search:focus {
+          border-color: rgba(244,63,94,0.68);
+          background: rgba(244,63,94,0.045);
+          box-shadow: 0 0 0 4px rgba(244,63,94,0.08), 0 0 26px rgba(244,63,94,0.12);
+        }
+        .feed-search::placeholder { color: rgba(255,255,255,0.28); }
+        .skill-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-top: 12px;
+        }
+        .skill-filter {
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 999px;
+          background: rgba(255,255,255,0.045);
+          color: rgba(255,255,255,0.58);
+          padding: 8px 12px;
+          font: inherit;
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: color 0.18s, border-color 0.18s, background 0.18s;
+        }
+        .skill-filter.is-active {
+          color: white;
+          border-color: rgba(244,63,94,0.44);
+          background: rgba(244,63,94,0.15);
+        }
+        .feed-stats {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+        }
+        .feed-stat {
+          border-radius: 18px;
+          padding: 18px;
+        }
+        .project-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 18px;
+        }
+        .project-card {
+          min-height: 320px;
+          border-radius: 20px;
+          padding: 1px;
+          position: relative;
+          overflow: hidden;
+          transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+        }
+        .project-card::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(135deg, rgba(244,63,94,0.22), rgba(139,92,246,0.15), transparent 52%);
+          opacity: 0;
+          transition: opacity 0.2s;
+          pointer-events: none;
+        }
+        .project-card:hover {
+          transform: translateY(-4px);
+          border-color: rgba(244,63,94,0.28);
+          box-shadow: 0 28px 80px rgba(0,0,0,0.28), 0 0 42px rgba(244,63,94,0.1);
+        }
+        .project-card:hover::before { opacity: 1; }
+        .project-inner {
+          min-height: 318px;
+          height: 100%;
+          border-radius: 19px;
+          padding: 20px;
+          background: rgba(8,5,18,0.9);
+          display: flex;
+          flex-direction: column;
+          position: relative;
+          overflow: hidden;
+        }
+        .project-title {
+          margin: 0;
+          color: white;
+          font-size: 21px;
+          line-height: 1.18;
+          letter-spacing: -0.3px;
+        }
+        .project-desc {
+          color: rgba(255,255,255,0.52);
+          font-size: 14px;
+          line-height: 1.65;
+          margin: 14px 0 0;
+          display: -webkit-box;
+          -webkit-line-clamp: 4;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .tag-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 7px;
+          margin-top: 18px;
+        }
+        .project-tag {
+          border: 1px solid rgba(244,63,94,0.24);
+          border-radius: 999px;
+          background: rgba(244,63,94,0.1);
+          color: rgba(255,205,214,0.95);
+          padding: 6px 10px;
+          font-size: 12px;
+          font-weight: 800;
+        }
+        .join-btn {
+          width: 100%;
+          min-height: 44px;
+          margin-top: auto;
+          border: 0;
+          border-radius: 12px;
+          background: linear-gradient(135deg, #f43f5e, #e11d48);
+          color: white;
+          font: inherit;
+          font-weight: 800;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: transform 0.18s, box-shadow 0.18s, background 0.18s;
+          box-shadow: 0 0 28px rgba(244,63,94,0.22);
+        }
+        .join-btn:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 0 42px rgba(244,63,94,0.34);
+        }
+        .join-btn:disabled {
+          background: rgba(255,255,255,0.1);
+          color: rgba(255,255,255,0.42);
+          cursor: not-allowed;
+          box-shadow: none;
+        }
+        .feed-state {
+          border-radius: 20px;
+          padding: clamp(28px, 6vw, 56px);
+          text-align: center;
+        }
+        :focus-visible {
+          outline: 2px solid rgba(244,63,94,0.65);
+          outline-offset: 3px;
+          border-radius: 8px;
+        }
+
+        @media (max-width: 980px) {
+          .feed-dashboard { grid-template-columns: 1fr; }
+          .project-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 640px) {
+          .feed-nav { align-items: stretch; flex-direction: column; }
+          .feed-create { width: 100%; }
+          .feed-stats { grid-template-columns: 1fr 1fr; }
+          .project-grid { grid-template-columns: 1fr; }
+          .feed-title { letter-spacing: -1px; }
+        }
+      `}</style>
+
+      <div style={{ position:"fixed", top:"-180px", left:"-130px", width:"460px", height:"460px",
+        borderRadius:"50%", background:"radial-gradient(circle, rgba(244,63,94,0.15) 0%, transparent 70%)",
+        filter:"blur(78px)", pointerEvents:"none", animation:"feedFloatA 11s ease-in-out infinite" }} aria-hidden />
+      <div style={{ position:"fixed", bottom:"-170px", right:"-120px", width:"420px", height:"420px",
+        borderRadius:"50%", background:"radial-gradient(circle, rgba(139,92,246,0.14) 0%, transparent 70%)",
+        filter:"blur(70px)", pointerEvents:"none", animation:"feedFloatB 13s ease-in-out infinite" }} aria-hidden />
+      <div style={{ position:"fixed", inset:0, pointerEvents:"none",
+        backgroundImage:"linear-gradient(rgba(255,255,255,0.024) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.024) 1px, transparent 1px)",
+        backgroundSize:"30px 30px" }} aria-hidden />
+      <div style={{ position:"fixed", top:0, left:0, right:0, height:"1px", zIndex:2, pointerEvents:"none",
+        background:"linear-gradient(90deg, transparent, rgba(244,63,94,0.85) 30%, rgba(139,92,246,0.7) 68%, transparent)",
+        backgroundSize:"300% auto", animation:"feedShimmer 5s linear infinite" }} aria-hidden />
+
+      <div className="feed-shell">
+        <nav className="feed-nav">
+          <div className="feed-brand">
+            <span style={{ width:"7px", height:"7px", borderRadius:"50%", background:"#f43f5e",
+              boxShadow:"0 0 10px rgba(244,63,94,0.95)" }} />
+            CodeCrew Feed
           </div>
-          <p className="text-base sm:text-lg lg:text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto text-center">
-            Find amazing projects to collaborate on and grow with the community
+
+          <button className="feed-create" onClick={() => navigate("/createproject")}>
+            Create Project <span aria-hidden>+</span>
+          </button>
+        </nav>
+
+        <header>
+          <h1 className="feed-title">
+            Discover projects worth <span>shipping.</span>
+          </h1>
+          <p style={{ maxWidth:"650px", margin:"20px 0 0", color:"rgba(255,255,255,0.52)",
+            fontSize:"clamp(15px, 2vw, 18px)", lineHeight:"1.7" }}>
+            Browse open builds, find a stack that fits, and join the crew that is already moving.
           </p>
-        </div>
+        </header>
 
-        {/* Loading State */}
-        {loading && (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="text-6xl sm:text-8xl animate-bounce mb-4">🔍</div>
-            <p className="text-lg sm:text-2xl text-gray-600 font-semibold">Loading projects...</p>
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <div className="bg-linear-to-r from-red-50 to-red-100 border-l-4 border-red-500 rounded-2xl p-6 sm:p-8 mb-8 animate-pulse">
-            <div className="flex items-start gap-3 sm:gap-4">
-              <span className="text-4xl">⚠️</span>
-              <div>
-                <p className="text-lg sm:text-xl text-red-800 font-bold mb-1">Something went wrong</p>
-                <p className="text-sm sm:text-base text-red-700">{error}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Projects Grid */}
-        {!loading && projects.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
-            {projects.map(project => (
-              <div
-                key={project._id}
-                className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 border border-white/20 overflow-hidden group hover:translate-y-0.5"
-              >
-              {/* Card Header */}
-              <div className="bg-linear-to-r from-rose-500/10 to-pink-600/10 p-4 sm:p-5 lg:p-6 border-b border-gray-100">
-                <h2 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 line-clamp-2 group-hover:text-rose-600 transition-colors">
-                  {project.title}
-                </h2>
-              </div>
-
-              {/* Card Body */}
-              <div className="p-4 sm:p-5 lg:p-6 space-y-3 sm:space-y-4">
-                {/* Description */}
-                <div>
-                  <p className="text-gray-600 text-xs sm:text-sm lg:text-base leading-relaxed line-clamp-2">
-                    {project.description}
-                  </p>
-                </div>
-
-                {/* Skills Section */}
-                {project.skills && (
-                  <div className="space-y-1.5 sm:space-y-2">
-                    <p className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                      <span>💡</span>
-                      <span>Skills</span>
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {Array.isArray(project.skills)
-                        ? project.skills.slice(0, 3).map((skill, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-1 text-xs bg-linear-to-r from-rose-100 to-pink-100 text-rose-700 rounded-full font-semibold border border-rose-200 hover:border-rose-400 transition-all"
-                          >
-                            {skill}
-                          </span>
-                        ))
-                        : <span className="text-xs text-gray-500 italic">{project.skills}</span>
-                      }
-                    </div>
-                  </div>
-                )}
-
-                {/* Creator Info */}
-                <div className="pt-1.5 sm:pt-2 border-t border-gray-100">
-                  <p className="text-xs text-gray-500 flex items-center gap-1.5">
-                    <span>👤</span>
-                    <span className="font-semibold text-gray-700 truncate " onChange={() => getusername(project.username)}>{user || "Unknown"}</span>
-                  </p>
-                </div>
-
-                {/* Join Button */}
+        <section className="feed-dashboard" aria-label="Feed controls">
+          <div className="feed-control">
+            <input
+              className="feed-search"
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search by title, description, location, or stack"
+            />
+            <div className="skill-row">
+              {skillCloud.map((skill) => (
                 <button
-                  onClick={() => handlejoin(project._id)}
-                  className="w-full px-3 sm:px-4 lg:px-5 py-2 sm:py-2.5 lg:py-3 text-xs sm:text-sm lg:text-base font-bold text-white bg-linear-to-r from-rose-600 to-pink-600 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:from-rose-700 hover:to-pink-700 active:scale-95 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 focus:ring-offset-white transform"
+                  key={skill}
+                  type="button"
+                  onClick={() => setActiveSkill(skill)}
+                  className={`skill-filter${activeSkill === skill ? " is-active" : ""}`}
                 >
-                  <span className="flex items-center justify-center gap-1 sm:gap-2">
-                    <span>Join</span>
-                    <span className="text-sm sm:text-base">🚀</span>
-                  </span>
+                  {skill}
                 </button>
-              </div>
+              ))}
             </div>
-            ))}
           </div>
-        ) : !loading && (
-          <div className="text-center py-20">
-            <div className="text-7xl sm:text-8xl mb-4">📭</div>
-            <p className="text-xl sm:text-2xl text-gray-600 font-semibold mb-2">No projects available yet</p>
-            <p className="text-base sm:text-lg text-gray-500">Be the first to create a project!</p>
+
+          <div className="feed-stats">
+            <div className="feed-stat">
+              <strong style={{ display:"block", fontSize:"30px", lineHeight:"1", color:"white" }}>
+                {projects.length}
+              </strong>
+              <span style={{ display:"block", marginTop:"8px", color:"rgba(255,255,255,0.42)",
+                fontSize:"12px", fontWeight:"700", textTransform:"uppercase", letterSpacing:"1px" }}>
+                live projects
+              </span>
+            </div>
+            <div className="feed-stat">
+              <strong style={{ display:"block", fontSize:"30px", lineHeight:"1", color:"white" }}>
+                {totalSkills}
+              </strong>
+              <span style={{ display:"block", marginTop:"8px", color:"rgba(255,255,255,0.42)",
+                fontSize:"12px", fontWeight:"700", textTransform:"uppercase", letterSpacing:"1px" }}>
+                stacks
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {error && (
+          <div className="feed-state" style={{ marginBottom:"18px", borderColor:"rgba(239,68,68,0.24)",
+            background:"rgba(239,68,68,0.08)", textAlign:"left", padding:"16px 18px" }}>
+            <strong style={{ display:"block", color:"rgba(254,202,202,0.96)", fontSize:"14px" }}>
+              Something went wrong
+            </strong>
+            <span style={{ color:"rgba(254,202,202,0.72)", fontSize:"13px", marginTop:"4px", display:"block" }}>
+              {error}
+            </span>
+          </div>
+        )}
+
+        {loading && (
+          <div className="feed-state">
+            <div style={{ width:"28px", height:"28px", border:"3px solid rgba(255,255,255,0.16)",
+              borderTopColor:"#f43f5e", borderRadius:"50%", animation:"feedSpin 0.7s linear infinite",
+              margin:"0 auto 18px" }} />
+            <h2 style={{ margin:"0 0 8px", fontSize:"22px" }}>Loading projects</h2>
+            <p style={{ margin:0, color:"rgba(255,255,255,0.42)" }}>Finding the newest builds for you.</p>
+          </div>
+        )}
+
+        {!loading && filteredProjects.length > 0 && (
+          <section className="project-grid" aria-label="Projects">
+            {filteredProjects.map((project) => {
+              const skills = Array.isArray(project.skills) ? project.skills : [];
+              const isJoined = joinedIds.includes(project._id);
+              const memberCount = Array.isArray(project.members) ? project.members.length : 0;
+
+              return (
+                <article key={project._id} className="project-card">
+                  <div className="project-inner">
+                    <div style={{ display:"flex", justifyContent:"space-between", gap:"12px", marginBottom:"18px" }}>
+                      <span style={{ color:"rgba(244,63,94,0.9)", fontSize:"12px", fontWeight:"800",
+                        letterSpacing:"1.2px", textTransform:"uppercase" }}>
+                        Open project
+                      </span>
+                      <span style={{ color:"rgba(255,255,255,0.36)", fontSize:"12px", fontWeight:"700" }}>
+                        {memberCount} joined
+                      </span>
+                    </div>
+
+                    <h2 className="project-title">{project.title}</h2>
+                    <p className="project-desc">{project.description}</p>
+
+                    <div className="tag-row">
+                      {skills.length > 0 ? (
+                        <>
+                          {skills.slice(0, 4).map((skill) => (
+                            <span key={skill} className="project-tag">{skill}</span>
+                          ))}
+                          {skills.length > 4 && (
+                            <span className="project-tag">+{skills.length - 4}</span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="project-tag">General</span>
+                      )}
+                    </div>
+
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                      gap:"10px", margin:"18px 0 16px", color:"rgba(255,255,255,0.36)", fontSize:"13px" }}>
+                      <span>{project.location || "Remote friendly"}</span>
+                      <span>{project.creator?.length || 1} creator</span>
+                    </div>
+
+                    <button
+                      className="join-btn"
+                      onClick={() => handleJoin(project._id)}
+                      disabled={joiningId === project._id || isJoined}
+                    >
+                      {joiningId === project._id ? (
+                        <>
+                          <span style={{ width:"15px", height:"15px", border:"2px solid rgba(255,255,255,0.3)",
+                            borderTopColor:"white", borderRadius:"50%", animation:"feedSpin 0.7s linear infinite" }} />
+                          Joining...
+                        </>
+                      ) : isJoined ? (
+                        "Joined"
+                      ) : (
+                        <>Join project <span aria-hidden>&rarr;</span></>
+                      )}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </section>
+        )}
+
+        {!loading && filteredProjects.length === 0 && (
+          <div className="feed-state">
+            <h2 style={{ margin:"0 0 10px", fontSize:"24px" }}>
+              {projects.length === 0 ? "No projects yet" : "No matches found"}
+            </h2>
+            <p style={{ margin:"0 auto 22px", maxWidth:"460px", color:"rgba(255,255,255,0.44)", lineHeight:"1.6" }}>
+              {projects.length === 0
+                ? "Start the first build and give the community something to join."
+                : "Try a different search term or switch the selected stack."}
+            </p>
+            <button className="feed-create" onClick={() => navigate("/createproject")}>
+              Create Project <span aria-hidden>+</span>
+            </button>
           </div>
         )}
       </div>
