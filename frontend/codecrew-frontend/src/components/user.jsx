@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import api from "../api/axios;"
+import api from "../api/axios"
 
 export default function User() {
     const [user, setUser] = useState(null);
