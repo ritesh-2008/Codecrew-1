@@ -6,6 +6,7 @@ import Register from "./pages/Regester";
 import Landing from "./pages/Landing";
 import Feed from "./pages/Feed";
 import CreateProject from "./components/Createproject";
+import User from "./components/user";
 
 function App() {
   return (
@@ -19,6 +20,8 @@ function App() {
             <Route path="/register" element={<Register/>}/>
             <Route path="/feed" element={<ProtectedRoute> <Feed /> </ProtectedRoute>}/>
             <Route path="/createproject" element={<ProtectedRoute> <CreateProject /> </ProtectedRoute>}/>
+            <Route path="/profile" element={<ProtectedRoute> <User /> </ProtectedRoute>}/>
+            <Route path="/user" element={<ProtectedRoute> <User /> </ProtectedRoute>}/>
           </Routes>
         </Router>
       </AuthProvider>

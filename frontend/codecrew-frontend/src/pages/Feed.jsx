@@ -111,6 +111,13 @@ export default function Feed() {
           gap: 16px;
           margin-bottom: clamp(28px, 5vw, 48px);
         }
+        .feed-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+        }
         .feed-brand {
           display: inline-flex;
           align-items: center;
@@ -152,6 +159,24 @@ export default function Feed() {
           box-shadow: 0 0 34px rgba(244,63,94,0.28);
           transition: transform 0.18s, box-shadow 0.18s;
           white-space: nowrap;
+        }
+        .feed-profile {
+          border: 1px solid rgba(255,255,255,0.11);
+          border-radius: 13px;
+          padding: 13px 16px;
+          background: rgba(255,255,255,0.055);
+          color: rgba(255,255,255,0.72);
+          font: inherit;
+          font-weight: 800;
+          cursor: pointer;
+          transition: transform 0.18s, border-color 0.18s, background 0.18s, color 0.18s;
+          white-space: nowrap;
+        }
+        .feed-profile:hover {
+          transform: translateY(-1px);
+          color: white;
+          border-color: rgba(255,255,255,0.22);
+          background: rgba(255,255,255,0.08);
         }
         .feed-create:hover {
           transform: translateY(-1px);
@@ -346,6 +371,8 @@ export default function Feed() {
 
         @media (max-width: 640px) {
           .feed-nav { align-items: stretch; flex-direction: column; }
+          .feed-actions { justify-content: stretch; }
+          .feed-profile { flex: 1; }
           .feed-create { width: 100%; }
           .feed-stats { grid-template-columns: 1fr 1fr; }
           .project-grid { grid-template-columns: 1fr; }
@@ -374,9 +401,14 @@ export default function Feed() {
             CodeCrew Feed
           </div>
 
-          <button className="feed-create" onClick={() => navigate("/createproject")}>
-            Create Project <span aria-hidden>+</span>
-          </button>
+          <div className="feed-actions">
+            <button className="feed-profile" onClick={() => navigate("/profile")}>
+              Profile
+            </button>
+            <button className="feed-create" onClick={() => navigate("/createproject")}>
+              Create Project <span aria-hidden>+</span>
+            </button>
+          </div>
         </nav>
 
         <header>
