@@ -1,10 +1,13 @@
 import express from "express"
+import { createServer } from "node:http"
+import { Server } from "socket.io";
 import dotenv from "dotenv"
 import cors from "cors"
 import helmet from "helmet"
 import { apiLimiter } from "./config/limiter.js"
 import path from "path"
 import { fileURLToPath } from "url"
+import registerSocketHandlers from "./socket/index.js";
 
 // Load .env from backend directory
 const __filename = fileURLToPath(import.meta.url)
@@ -17,6 +20,7 @@ import connectToDatabase from "./config/db.js"
 
 
 const app = express() // my express app
+const server = createServer(app)  // create an HTTP server using the Express app
 const port = process.env.PORT || 3000
 const host = process.env.HOST || "0.0.0.0"
 
@@ -41,6 +45,15 @@ const corsOptions = {
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }
+// Create a new Socket.IO server and attach it to the HTTP server
+const io = new Server(server, {
+  cors: {
+   origin:["http://localhost:5173"],
+        credentials:true
+  }
+});
+console.log("registering socket handlers...")
+registerSocketHandlers(io)  // Register socket handlers
 
 // Apply middleware BEFORE routes
 app.use(cors(corsOptions))
@@ -83,6 +96,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, message: "Internal Server Error" })
 })
 
-app.listen(port, host, () => {
+server.listen(port, host, () => {
     console.log(`Server is running on http://${host}:${port}`)
 })

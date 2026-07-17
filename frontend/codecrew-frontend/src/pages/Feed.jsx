@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import { socket } from "../socket";
 
 export default function Feed() {
   const [projects, setProjects] = useState([]);
@@ -61,6 +62,9 @@ export default function Feed() {
     try {
       const res = await api.post(`/projects/${projectId}/join`);
       if (res.data.success) {
+        console.log("Emitting join-project", projectId);
+        console.log(socket.connected);
+        socket.emit("join-project", projectId);
         setJoinedIds((current) =>
           current.includes(projectId) ? current : [...current, projectId]
         );
@@ -353,6 +357,30 @@ export default function Feed() {
           cursor: not-allowed;
           box-shadow: none;
         }
+        .chat-btn {
+          width: 100%;
+          min-height: 44px;
+          margin-top: 8px;
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 12px;
+          background: rgba(255,255,255,0.045);
+          color: rgba(255,255,255,0.68);
+          font: inherit;
+          font-weight: 700;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          transition: all 0.18s;
+        }
+        .chat-btn:hover {
+          background: rgba(255,255,255,0.08);
+          color: white;
+          border-color: rgba(244,63,94,0.3);
+          transform: translateY(-1px);
+        }
+        .chat-btn:active { transform: scale(0.98); }
         .feed-state {
           border-radius: 20px;
           padding: clamp(28px, 6vw, 56px);
@@ -548,6 +576,16 @@ export default function Feed() {
                       ) : (
                         <>Join project <span aria-hidden>&rarr;</span></>
                       )}
+                    </button>
+
+                    <button
+                      className="chat-btn"
+                      onClick={() => navigate(`/chat/${project._id}`)}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:"6px"}}>
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                      </svg>
+                      Chat
                     </button>
                   </div>
                 </article>
