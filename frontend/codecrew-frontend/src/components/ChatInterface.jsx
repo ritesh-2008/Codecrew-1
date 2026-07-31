@@ -2,12 +2,13 @@ import { useState, useEffect, useRef, useCallback, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { socket } from "../socket";
 import api from "../api/axios";
-import { AuthContext } from "../context/Authcontext";
+
+import useAuth from "../hooks/usehook";
 
 export default function ChatInterface() {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext);
+  
 
   const [project, setProject] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -15,9 +16,10 @@ export default function ChatInterface() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [usersOnline, setUsersOnline] = useState(0);
-  const [username, setUsername] = useState(user?.username || "Anonymous");
+  const [username, setUsername] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const {getusername} =  useAuth();
 
   // Fetch project info
   useEffect(() => {
@@ -25,8 +27,7 @@ export default function ChatInterface() {
       try {
         const res = await api.get(`/projects/${projectId}`);
         setProject(res.data.project);
-        const usernameRes = await api.get("/user/me");
-        setUsername(usernameRes.data.user);
+        
       } catch (err) {
         console.error("Failed to fetch project:", err);
       } finally {
@@ -35,6 +36,24 @@ export default function ChatInterface() {
     };
     fetchProject();
   }, [projectId]);
+
+  useEffect(()=> {
+    const getuser = async() => {
+      try {
+        const res = await getusername();
+        if (res.success){
+          console.log("username fetched",res.user.username)
+          setUsername(res.user.username)
+        }
+        
+      } catch (err) {
+        console.error("failed to get username",err)
+      } finally {
+        setLoading(false);
+      }
+    }; 
+  getuser();
+  },[]);
 
   // Join socket room and listen for messages
   useEffect(() => {
@@ -86,7 +105,7 @@ export default function ChatInterface() {
     socket.emit("send-message", {
       projectId,
       text,
-      senderName: username?.username ,
+      senderName: username || "Anonymous",
     });
     setSending(false);
   }, [input, sending, projectId]);

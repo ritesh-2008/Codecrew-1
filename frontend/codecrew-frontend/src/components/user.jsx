@@ -2,16 +2,19 @@ import { useState, useEffect } from "react";
 import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
 
+
 export default function User() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const navigate = useNavigate();
+   
 
     useEffect(() => {
         const getUser = async () => {
             try {
                 const res = await api.get("/user/me");
+                console.log("API response:", res.data.user);
                 setUser(res.data.user);
                 console.log("Fetched user:", res.data.user);
             } catch (err) {

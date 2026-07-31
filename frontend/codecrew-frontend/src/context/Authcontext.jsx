@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
 
                     }))
                     settoken(newtoken)
-                    setuser({ user: username, email, userId: decoded.userId })
+                    setuser({ name: username, email, userId: decoded.userId })
                     return { success: true };
 
                 }
@@ -76,14 +76,15 @@ export const AuthProvider = ({ children }) => {
                 const decoded = jwtDecode(newtoken)
 
                 localStorage.setItem("token", newtoken)
+                const fetchedUsername = response.data.username || "User";
+
                 localStorage.setItem("user", JSON.stringify({
-                    name: "User",
+                    name: fetchedUsername,
                     email: email,
                     userId: decoded.userId,
-
                 }))
                 settoken(newtoken)
-                setuser({ name: "User", email, userId: decoded.userId })
+                setuser({ name: fetchedUsername, email, userId: decoded.userId })
                 return { success: true }
             } else {
                 throw new Error(response.data.message || "invalid reponse from server")
@@ -95,6 +96,17 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
+    const getusername = useCallback(async() => {
+        setError(false);
+        try{
+            const response = await api.get("/user/me")
+            return response.data;
+        } catch (err) {
+            const errorMessage = err.response?.data?.message || err.message || "Failed to fetch user information";
+            setError(errorMessage);
+            return { success: false, error: errorMessage };
+        }
+    }, [])
 
     const logout = useCallback(() => {
         localStorage.removeItem("token");
@@ -111,6 +123,7 @@ export const AuthProvider = ({ children }) => {
         error,
         register,
         login,
+        getusername,
         logout,
         isAuthenticated: !!token,
         api

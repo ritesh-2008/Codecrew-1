@@ -58,7 +58,7 @@ export const login = async (req, res) => {
         if (isValid) {
             const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRATION || "1d" })
             console.log(`[Login] Login successful for: ${email}`)
-            res.json({ success: true, message: "Login successful", token })
+            res.json({ success: true, message: "Login successful", token, username: user.username })
         } else {
             console.warn(`[Login] Password mismatch for user: ${email}`)
             res.status(401).json({ success: false, message: "Invalid email or password" })

@@ -28,12 +28,12 @@ export default function chatSocket(io, socket) {
   });
 
   // Handle incoming chat messages
-  socket.on("send-message", ({ projectId, text }) => {
+  socket.on("send-message", ({ projectId, text ,senderName}) => {
     if (!projectId || !text?.trim()) return;
 
     const message = {
       text: text.trim(),
-      senderName: socket.data?.username || "Anonymous",
+      senderName: senderName,
       senderId: socket.id,
       time: new Date().toISOString(),
       isSelf: false,
